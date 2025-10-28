@@ -2,10 +2,8 @@ from django.shortcuts import render, redirect, get_object_or_404
 from django.contrib import messages
 from django.contrib.auth import authenticate, login, logout
 from django.contrib.auth.decorators import login_required
-from .forms import UserRegisterForm, UserLoginForm
+from .forms import UserRegisterForm, UserLoginForm, PostForm
 from .models import Post
-
-
 # Create your views here.
 def register(request):
     if request.method == 'POST':
@@ -18,8 +16,6 @@ def register(request):
     else:
         form = UserRegisterForm()
     return render(request, "app/register.html", {'form': form})
-
-
 def user_login(request):
     if request.method == 'POST':
         form = UserLoginForm(request.POST)
@@ -36,13 +32,9 @@ def user_login(request):
     else:
         form = UserLoginForm()
     return render(request, 'app/login.html', {'form': form})
-
-
 def user_logout(request):
     logout(request)
     return redirect('login')
-
-
 def home(request):
     # Получаем все объекты Post из базы данных
     posts = Post.objects.all()
@@ -52,10 +44,23 @@ def home(request):
         'posts': posts, # 'posts' - это имя переменной, которое будет доступно в шаблоне
     }
     return render(request, 'app/home.html', context)
-
 @login_required
 def post_detail(request, post_id):
     # Получаем конкретный пост по ID или возвращаем 404, если не найден
     post = get_object_or_404(Post, id=post_id)
     # Можно передать дополнительные данные, например, комментарии
     return render(request, 'app/post_detail.html', {'post': post})
+@login_required
+def post_create(request):
+    if request.method == 'POST':
+        form = PostForm(request.POST) # Предполагается, что у тебя есть PostForm
+        if form.is_valid():
+            post = form.save(commit=False) # Не сохраняем в базу пока
+            post.author = request.user # Присваиваем автора текущему пользователю
+            post.save() # Теперь сохраняем
+            messages.success(request, 'Пост успешно создан!')
+            return redirect('home') # Перенаправляем на главную страницу после создания
+    else:
+        form = PostForm()
+
+    return render(request, 'app/post_create.html', {'form': form})

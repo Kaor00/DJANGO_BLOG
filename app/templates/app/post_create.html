@@ -1,0 +1,15 @@
+<!-- app/templates/app/post_create.html -->
+{% extends 'app/base.html' %}
+
+{% block title %}Создать пост{% endblock %}
+
+{% block content %}
+<div class="container mt-4">
+    <h2>Создать новый пост</h2>
+    <form method="post">
+        {% csrf_token %}
+        {{ form.as_p }} <!-- Отображаем форму  -->
+        <button type="submit" class="btn btn-primary">Создать пост</button>
+    </form>
+</div>
+{% endblock %}

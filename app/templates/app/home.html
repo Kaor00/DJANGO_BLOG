@@ -2,7 +2,6 @@
 {% block content %}
 
 <div class="d-flex"> <!-- Flex container для боковой панели и основного контента -->
-
     <!-- Боковая панель -->
     <aside id="sidebar" class="bg-dark text-white flex-shrink-0">
         <div class="sidebar-content p-3">
@@ -10,22 +9,19 @@
                 <h5 class="text-white">Меню Блога</h5>
             </div>
             <ul class="nav flex-column">
-                <!-- Пример элементов навигации -->
-                <!--
+                <!-- Добавляем кнопку "Добавить пост" -->
+                {% if user.is_authenticated %}
                 <li class="nav-item">
-                    <a class="nav-link text-light" href="#"><i class="fas fa-home"></i> Домой</a>
+                    <a class="nav-link text-light" href="{% url 'post_create' %}">
+                        <i class="fas fa-plus"></i> <!-- Иконка "плюс" -->
+                        Добавить пост
+                    </a>
                 </li>
-                <li class="nav-item">
-                    <a class="nav-link text-light" href="#">Мои посты</a>
-                </li>
-                <li class="nav-item">
-                    <a class="nav-link text-light" href="#">Категории</a>
-                </li>
-                -->
+                {% endif %}
+                <!-- /Добавляем кнопку "Добавить пост" -->
             </ul>
         </div>
     </aside>
-
     <!-- Основной контент -->
     <div class="flex-grow-1 bg-light" style="margin-left: 10px; padding-right: 20px;">
         <!-- Добавлен небольшой отступ от боковой панели -->
@@ -54,7 +50,6 @@
             {% endif %}
         </div>
     </div>
-
 </div> <!-- Конец d-flex -->
 
 {% endblock %}
