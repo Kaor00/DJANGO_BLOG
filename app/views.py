@@ -35,6 +35,8 @@ def user_login(request):
 def user_logout(request):
     logout(request)
     return redirect('login')
+
+@login_required
 def home(request):
     # Получаем все объекты Post из базы данных
     posts = Post.objects.all()
@@ -64,3 +66,27 @@ def post_create(request):
         form = PostForm()
 
     return render(request, 'app/post_create.html', {'form': form})
+
+@login_required
+def post_delete(request, post_id):
+    # Получаем пост или возвращаем 404
+    post = get_object_or_404(Post, id=post_id)
+    # Проверяем, является ли текущий пользователь автором поста
+    if post.author != request.user:
+        # Или перенаправляем на главную с сообщением об ошибке
+        messages.error(request, 'У вас нет прав для удаления этого поста.')
+        return redirect('home')
+
+    if request.method == 'POST':
+        # Если это POST-запрос (пользователь подтвердил удаление через модальное окно)
+        post_title = post.title # Сохраняем заголовок для сообщения
+        post.delete() # Удаляем пост из БД (и связанные объекты, если настроено CASCADE)
+        messages.success(request, f'Пост "{post_title}" успешно удалён.')
+        return redirect('home') # Перенаправляем на главную страницу
+
+    # Если это GET-запрос (например, прямой доступ по URL),
+    # можно перенаправить или показать страницу подтверждения.
+    # Обычно для удаления используется POST, но на всякий случай.
+    # Лучше перенаправить на детали поста или на главную.
+    messages.warning(request, 'Для удаления поста используйте кнопку на странице поста.')
+    return redirect('post_detail', post_id=post.id)
