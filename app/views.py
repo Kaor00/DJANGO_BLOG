@@ -2,8 +2,10 @@ from django.shortcuts import render, redirect, get_object_or_404
 from django.contrib import messages
 from django.contrib.auth import authenticate, login, logout
 from django.contrib.auth.decorators import login_required
+from django.http import HttpResponseRedirect
+from django.urls import reverse
 from .forms import UserRegisterForm, UserLoginForm, PostForm
-from .models import Post
+from .models import Post, Like
 # Create your views here.
 def register(request):
     if request.method == 'POST':
@@ -50,8 +52,16 @@ def home(request):
 def post_detail(request, post_id):
     # Получаем конкретный пост по ID или возвращаем 404, если не найден
     post = get_object_or_404(Post, id=post_id)
+    # Проверяем, поставил ли текущий пользователь лайк
+    user_liked = False
+    if request.user.is_authenticated:
+        user_liked = post.likes.filter(user=request.user).exists()  # Используем связь через related_name='likes'
+
     # Можно передать дополнительные данные, например, комментарии
-    return render(request, 'app/post_detail.html', {'post': post})
+    return render(request, 'app/post_detail.html', {
+        'post': post,
+        'user_liked': user_liked,  # Передаём флаг в шаблон
+    })
 @login_required
 def post_create(request):
     if request.method == 'POST':
@@ -90,3 +100,26 @@ def post_delete(request, post_id):
     # Лучше перенаправить на детали поста или на главную.
     messages.warning(request, 'Для удаления поста используйте кнопку на странице поста.')
     return redirect('post_detail', post_id=post.id)
+
+@login_required
+def toggle_like(request, post_id):
+    post = get_object_or_404(Post, id=post_id)
+    # Получаем или создаём объект Like
+    # get_or_create возвращает кортеж (объект, создан ли он)
+    like_obj, created = Like.objects.get_or_create(user=request.user, post=post)
+
+    if created:
+        # Лайк был добавлен
+        action = 'liked'
+    else:
+        # Лайк уже существовал, значит дизлайкаем
+        like_obj.delete()
+        action = 'unliked'
+
+    # Сообщение
+    messages.info(request, f'Вы {action} пост "{post.title}".')
+
+    # Перенаправляем обратно на страницу поста
+    # request.META.get('HTTP_REFERER') возвращает предыдущую страницу
+    next_url = request.META.get('HTTP_REFERER', reverse('home')) # Если реферера нет, идём на главную
+    return HttpResponseRedirect(next_url)

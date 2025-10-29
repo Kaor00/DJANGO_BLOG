@@ -18,6 +18,34 @@
         <div class="post-content-body">
             {{ post.content }}
         </div>
+        <!-- Отображение количества лайков и кнопки лайка/дизлайка -->
+        <footer class="mt-4">
+            <div class="d-flex justify-content-between align-items-center">
+                <!-- Количество лайков -->
+                <div>
+                    <small class="text-muted">
+                        <em>❤️</em>
+                        {{ post.get_like_count }} лайк{{ post.get_like_count|pluralize }}
+                    </small>
+                </div>
+                <!-- Кнопка лайка/дизлайка -->
+                {% if user.is_authenticated and post.author != user %}
+                    <form method="post" action="{% url 'toggle_like' post.id %}">
+                        {% csrf_token %}
+                        {% if post.user_liked %}
+                            <button type="submit" class="btn btn-sm btn-danger">
+                                <em>❤️</em> Отменить лайк
+                            </button>
+                        {% else %}
+                            <button type="submit" class="btn btn-sm btn-outline-danger">
+                                <em>❤️</em> Нравится
+                            </button>
+                        {% endif %}
+                    </form>
+                {% endif %}
+            </div>
+        </footer>
+        <!-- /Отображение лайков и кнопки -->
     </article>
      <!-- Кнопка удаления -->
     {% if user.is_authenticated and post.author == user %}

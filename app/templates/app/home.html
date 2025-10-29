@@ -13,7 +13,6 @@
                 {% if user.is_authenticated %}
                 <li class="nav-item">
                     <a class="nav-link text-light" href="{% url 'post_create' %}">
-                        <i class="fas fa-plus"></i> <!-- Иконка "плюс" -->
                         Добавить пост
                     </a>
                 </li>
@@ -34,10 +33,20 @@
                 {% for post in posts %}
                 <div class="col-md-6 col-lg-4 mb-4">
                     <a href="{% url 'post_detail' post.id %}" class="text-decoration-none text-reset">
-                        <div class="post-card p-3 h-100">
+                        <div class="post-card p-3 h-100 position-relative">
                             <h3 class="post-title">{{ post.title }}</h3>
                             <p class="post-meta"><strong>Автор:</strong> {{ post.author.username }}</p>
                             <p class="post-content">{{ post.content|truncatechars:150 }}</p>
+                            <!-- Отображение количества лайков в левом нижнем углу -->
+                            <div class="position-absolute bottom-0 start-0 mb-2 ms-2">
+                                {% if post.get_like_count %}
+                                    <small class="text-muted">
+                                        <em>❤️</em> <!-- Иконка сердца -->
+                                        {{ post.get_like_count }} <!-- Вызов метода модели -->
+                                    </small>
+                                {%endif%}
+                            </div>
+                            <!-- /Отображение количества лайков -->
                         </div>
                     </a>
                 </div>
