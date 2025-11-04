@@ -1,0 +1,15 @@
+<!-- app/templates/app/post_edit.html -->
+{% extends 'app/base.html' %}
+
+{% block content %}
+<div class="container mt-4">
+    <h2>Редактировать пост: {{post.title}}</h2>
+    <form method="post" enctype="multipart/form-data"> <!-- Добавлен enctype для файлов -->
+        {% csrf_token %}
+        {{ form.as_p }}
+        <button type="submit" class="btn btn-primary">Сохранить изменения</button>
+        <!-- Кнопка "Отмена" -->
+        <a href="{% url 'post_detail' post.id %}" class="btn btn-secondary">Отмена</a>
+    </form>
+</div>
+{% endblock %}

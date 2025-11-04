@@ -123,3 +123,28 @@ def toggle_like(request, post_id):
     # request.META.get('HTTP_REFERER') возвращает предыдущую страницу
     next_url = request.META.get('HTTP_REFERER', reverse('home')) # Если реферера нет, идём на главную
     return HttpResponseRedirect(next_url)
+
+
+@login_required
+def post_edit(request, post_id):
+    post = get_object_or_404(Post, id=post_id)
+
+    # Проверяем авторство
+    if post.author != request.user:
+        messages.error(request, 'У вас нет прав для редактирования этого поста.')
+        return redirect('home') # Или post_detail
+
+    if request.method == 'POST':
+        # Создаём форму с данными из POST-запроса и файлами (если были), привязываем к существующему посту
+        form = PostForm(request.POST, request.FILES, instance=post) # instance=post указывает, какой объект обновлять
+        if form.is_valid():
+            # form.save() теперь обновит существующий объект post
+            form.save()
+            messages.success(request, f'Пост "{post.title}" успешно обновлён.')
+            # Редиректим на страницу обновлённого поста
+            return redirect('post_detail', post_id=post.id)
+    else:
+        # Для GET-запроса создаём форму с данными существующего поста
+        form = PostForm(instance=post) # instance=post заполняет форму текущими значениями
+
+    return render(request, 'app/post_edit.html', {'form': form, 'post': post})
