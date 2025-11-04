@@ -65,7 +65,7 @@ def post_detail(request, post_id):
 @login_required
 def post_create(request):
     if request.method == 'POST':
-        form = PostForm(request.POST) # Предполагается, что у тебя есть PostForm
+        form = PostForm(request.POST, request.FILES) # Предполагается, что у тебя есть PostForm
         if form.is_valid():
             post = form.save(commit=False) # Не сохраняем в базу пока
             post.author = request.user # Присваиваем автора текущему пользователю

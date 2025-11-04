@@ -19,13 +19,15 @@ class UserLoginForm(forms.Form):
 class PostForm(forms.ModelForm):
     class Meta:
         model = Post
-        fields = ['title', 'content'] # Поля, которые будут в форме
+        fields = ['title', 'content', 'image'] # Поля, которые будут в форме
         # Можно настроить виджеты, лейблы и т.д.
         widgets = {
             'title': forms.TextInput(attrs={'class': 'form-control'}),
             'content': forms.Textarea(attrs={'class': 'form-control', 'rows': 5}),
+            'image': forms.FileInput(attrs={'class': 'form-control-file'}),
         }
         labels = {
             'title': 'Заголовок',
             'content': 'Содержание',
+            'image': 'Изображение (опционально)',
         }
