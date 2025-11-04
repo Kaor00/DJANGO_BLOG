@@ -4,8 +4,9 @@ from django.contrib.auth import authenticate, login, logout
 from django.contrib.auth.decorators import login_required
 from django.http import HttpResponseRedirect
 from django.urls import reverse
-from .forms import UserRegisterForm, UserLoginForm, PostForm
-from .models import Post, Like
+from .forms import UserRegisterForm, UserLoginForm, PostForm, CommentForm
+from .models import Post, Like, Comment, CommentLike
+
 # Create your views here.
 def register(request):
     if request.method == 'POST':
@@ -48,6 +49,8 @@ def home(request):
         'posts': posts, # 'posts' - это имя переменной, которое будет доступно в шаблоне
     }
     return render(request, 'app/home.html', context)
+
+
 @login_required
 def post_detail(request, post_id):
     # Получаем конкретный пост по ID или возвращаем 404, если не найден
@@ -56,12 +59,16 @@ def post_detail(request, post_id):
     user_liked = False
     if request.user.is_authenticated:
         user_liked = post.likes.filter(user=request.user).exists()  # Используем связь через related_name='likes'
-
+    # Подготовим форму комментария
+    comment_form = CommentForm()
     # Можно передать дополнительные данные, например, комментарии
     return render(request, 'app/post_detail.html', {
         'post': post,
         'user_liked': user_liked,  # Передаём флаг в шаблон
+        'comment_form': comment_form,  # Передаём форму в шаблон
     })
+
+
 @login_required
 def post_create(request):
     if request.method == 'POST':
@@ -148,3 +155,21 @@ def post_edit(request, post_id):
         form = PostForm(instance=post) # instance=post заполняет форму текущими значениями
 
     return render(request, 'app/post_edit.html', {'form': form, 'post': post})
+
+
+@login_required
+def add_comment(request, post_id):
+    post = get_object_or_404(Post, id=post_id)
+
+    if request.method == 'POST':
+        form = CommentForm(request.POST)
+        if form.is_valid():
+            comment = form.save(commit=False)
+            comment.post = post # Привязываем к посту
+            comment.author = request.user # Привязываем к пользователю
+            comment.save()
+            messages.success(request, 'Комментарий добавлен.')
+            # Редиректим обратно на страницу поста
+            return redirect('post_detail', post_id=post.id)
+    # Обычно GET-запрос не должен сюда попадать напрямую, но можно перенаправить
+    return redirect('post_detail', post_id=post.id)

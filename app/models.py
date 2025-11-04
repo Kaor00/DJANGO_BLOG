@@ -60,3 +60,37 @@ class Like(models.Model):
 
     def __str__(self):
         return f"{self.user.username} liked {self.post.title}"
+
+
+# Модель для комментариев
+class Comment(models.Model):
+    post = models.ForeignKey(Post, on_delete=models.CASCADE, related_name='comments')
+    #.CASCADE удалит комментарии при удалении поста
+    author = models.ForeignKey(User, on_delete=models.CASCADE)
+    content = models.TextField()
+    created_at = models.DateTimeField(auto_now_add=True)
+    # Поле для вложенности (ответ на комментарий)
+    parent = models.ForeignKey('self', on_delete=models.CASCADE, null=True, blank=True, related_name='replies')
+    # CASCADE удалит ответы при удалении родителя
+
+    def __str__(self):
+        return f'Comment by {self.author.username} on {self.post.title}'
+
+    class Meta:
+        verbose_name = 'Comment'
+        verbose_name_plural = 'Comments'
+
+
+# Модель для лайков к комментариям (пока не реализовано)
+class CommentLike(models.Model):
+    user = models.ForeignKey(User, on_delete=models.CASCADE, related_name='comment_likes')
+    comment = models.ForeignKey(Comment, on_delete=models.CASCADE, related_name='comment_likes')
+    created_at = models.DateTimeField(auto_now_add=True)
+
+    class Meta:
+        unique_together = ('user', 'comment')
+        verbose_name = 'CommentLike'
+        verbose_name_plural = 'CommentLikes'
+
+    def __str__(self):
+        return f"{self.user.username} liked comment on {self.comment.post.title}"
