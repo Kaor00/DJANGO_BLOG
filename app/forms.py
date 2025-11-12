@@ -1,7 +1,7 @@
 from django import forms
 from django.contrib.auth.models import User
 from django.contrib.auth.forms import UserCreationForm
-from .models import Post, Comment
+from .models import Post, Comment, UserProfile
 
 
 class UserRegisterForm(UserCreationForm):
@@ -10,7 +10,6 @@ class UserRegisterForm(UserCreationForm):
     class Meta:
         model = User
         fields = ['username', 'email', 'password1', 'password2']
-
 
 class UserLoginForm(forms.Form):
     username = forms.CharField()
@@ -72,3 +71,35 @@ class CommentForm(forms.ModelForm):
         if commit:
             comment.save()
         return comment
+
+# Новая форма для профиля
+class UserProfileForm(forms.ModelForm):
+    # Поля из User
+    username = forms.CharField(max_length=150, required=True)
+    email = forms.EmailField(required=True)
+
+    class Meta:
+        model = UserProfile
+        fields = ['avatar', 'birth_date', 'first_name', 'last_name', 'bio']
+
+    def __init__(self, *args, **kwargs):
+        # Извлекаем user из kwargs, если он есть
+        user = kwargs.pop('user', None)
+        super().__init__(*args, **kwargs)
+
+        if user:
+            # Заполняем поля User формы текущими значениями
+            self.fields['username'].initial = user.username
+            self.fields['email'].initial = user.email
+
+    def save(self, commit=True):
+        user_profile = super().save(commit=False)
+        user = user_profile.user # Получаем связанный User
+
+        # Обновляем поля User
+        user.username = self.cleaned_data['username']
+        user.email = self.cleaned_data['email']
+        if commit:
+            user.save()
+            user_profile.save()
+        return user_profile

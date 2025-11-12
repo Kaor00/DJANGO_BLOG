@@ -4,8 +4,9 @@ from django.contrib.auth import authenticate, login, logout
 from django.contrib.auth.decorators import login_required
 from django.http import HttpResponseRedirect
 from django.urls import reverse
-from .forms import UserRegisterForm, UserLoginForm, PostForm, CommentForm
-from .models import Post, Like, Comment, CommentLike
+from django.contrib.auth.models import User
+from .forms import UserRegisterForm, UserLoginForm, PostForm, CommentForm, UserProfileForm
+from .models import Post, Like, Comment, CommentLike, UserProfile
 
 # Create your views here.
 def register(request):
@@ -19,6 +20,7 @@ def register(request):
     else:
         form = UserRegisterForm()
     return render(request, "app/register.html", {'form': form})
+
 def user_login(request):
     if request.method == 'POST':
         form = UserLoginForm(request.POST)
@@ -35,6 +37,7 @@ def user_login(request):
     else:
         form = UserLoginForm()
     return render(request, 'app/login.html', {'form': form})
+
 def user_logout(request):
     logout(request)
     return redirect('login')
@@ -49,7 +52,6 @@ def home(request):
         'posts': posts, # 'posts' - это имя переменной, которое будет доступно в шаблоне
     }
     return render(request, 'app/home.html', context)
-
 
 @login_required
 def post_detail(request, post_id):
@@ -75,7 +77,6 @@ def post_detail(request, post_id):
         'comment_form': comment_form,  # Передаём форму в шаблон
         'comment_tree': comment_tree,
     })
-
 
 @login_required
 def post_create(request):
@@ -139,7 +140,6 @@ def toggle_like(request, post_id):
     next_url = request.META.get('HTTP_REFERER', reverse('home')) # Если реферера нет, идём на главную
     return HttpResponseRedirect(next_url)
 
-
 @login_required
 def post_edit(request, post_id):
     post = get_object_or_404(Post, id=post_id)
@@ -163,7 +163,6 @@ def post_edit(request, post_id):
         form = PostForm(instance=post) # instance=post заполняет форму текущими значениями
 
     return render(request, 'app/post_edit.html', {'form': form, 'post': post})
-
 
 @login_required
 def add_comment(request, post_id):
@@ -204,3 +203,31 @@ def build_comment_tree(comments):
             root_comments.append(item)
 
     return root_comments
+
+@login_required
+def profile_view(request, username):
+    # Получаем пользователя по username
+    user = get_object_or_404(User, username=username)
+    # Получаем или создаём профиль
+    profile, created = UserProfile.objects.get_or_create(user=user)
+    print(111, profile, created)
+
+    # Передаём и пользователя, и профиль в шаблон
+    return render(request, 'app/profile_view.html', {'profile_user': user, 'profile': profile})
+
+@login_required
+def profile_edit(request):
+    # Получаем профиль текущего пользователя
+    profile, created = UserProfile.objects.get_or_create(user=request.user)
+
+    if request.method == 'POST':
+        form = UserProfileForm(request.POST, request.FILES, instance=profile, user=request.user)
+        if form.is_valid():
+            form.save()
+            messages.success(request, 'Профиль успешно обновлён.')
+            # Редиректим на страницу просмотра профиля
+            return redirect('profile_view', username=request.user.username)
+    else:
+        form = UserProfileForm(instance=profile, user=request.user)
+
+    return render(request, 'app/profile_edit.html', {'form': form})
