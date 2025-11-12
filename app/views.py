@@ -59,13 +59,21 @@ def post_detail(request, post_id):
     user_liked = False
     if request.user.is_authenticated:
         user_liked = post.likes.filter(user=request.user).exists()  # Используем связь через related_name='likes'
+
+    # Получаем все комментарии к посту, отсортированные по времени создания
+    all_comments = Comment.objects.filter(post=post).select_related('author').prefetch_related(
+        'comment_likes').order_by('created_at')
+    # Строим дерево комментариев
+    comment_tree = build_comment_tree(all_comments)
+
     # Подготовим форму комментария
-    comment_form = CommentForm()
+    comment_form = CommentForm(post_id=post_id)
     # Можно передать дополнительные данные, например, комментарии
     return render(request, 'app/post_detail.html', {
         'post': post,
         'user_liked': user_liked,  # Передаём флаг в шаблон
         'comment_form': comment_form,  # Передаём форму в шаблон
+        'comment_tree': comment_tree,
     })
 
 
@@ -162,7 +170,7 @@ def add_comment(request, post_id):
     post = get_object_or_404(Post, id=post_id)
 
     if request.method == 'POST':
-        form = CommentForm(request.POST)
+        form = CommentForm(request.POST, post_id=post_id)
         if form.is_valid():
             comment = form.save(commit=False)
             comment.post = post # Привязываем к посту
@@ -173,3 +181,26 @@ def add_comment(request, post_id):
             return redirect('post_detail', post_id=post.id)
     # Обычно GET-запрос не должен сюда попадать напрямую, но можно перенаправить
     return redirect('post_detail', post_id=post.id)
+
+def build_comment_tree(comments):
+    """Вспомогательная функция для построения дерева комментариев."""
+    comment_dict = {}
+    root_comments = []
+
+    # Сначала создаем словарь всех комментариев по ID
+    for comment in comments:
+        comment_dict[comment.id] = {'comment': comment, 'replies': []}
+
+    # Затем связываем комментарии с их родителями
+    for item in comment_dict.values():
+        comment_obj = item['comment']
+        if comment_obj.parent_id:
+            # Найдем родительский комментарий в словаре
+            parent_item = comment_dict.get(comment_obj.parent_id)
+            if parent_item:
+                parent_item['replies'].append(item)
+        else:
+            # Это корневой комментарий
+            root_comments.append(item)
+
+    return root_comments

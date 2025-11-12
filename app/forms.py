@@ -34,6 +34,8 @@ class PostForm(forms.ModelForm):
 
 # Форма для комментариев
 class CommentForm(forms.ModelForm):
+    parent_id = forms.IntegerField(widget=forms.HiddenInput, required=False) # Скрытое поле для ID родительского комментария
+
     class Meta:
         model = Comment
         fields = ['content']
@@ -43,3 +45,30 @@ class CommentForm(forms.ModelForm):
         labels = {
             'content': '',
         }
+
+    def __init__(self, *args, **kwargs):
+        # Извлекаем post_id из kwargs, если он есть
+        self.post_id = kwargs.pop('post_id', None)
+        super().__init__(*args, **kwargs)
+
+    def save(self, commit=True):
+        # Убедимся, что post_id был передан
+        if not self.post_id:
+            raise ValueError("post_id must be provided to CommentForm")
+
+        comment = super().save(commit=False)
+        # Привязываем к посту через post_id
+        comment.post_id = self.post_id # Используем post_id, а не объект, чтобы избежать лишнего запроса
+        if self.cleaned_data.get('parent_id'):
+            # Если parent_id есть, находим родительский комментарий
+            parent_id = self.cleaned_data['parent_id']
+            try:
+                comment.parent = Comment.objects.get(id=parent_id, post_id=self.post_id) # Убедимся, что родитель принадлежит этому посту
+            except Comment.DoesNotExist:
+                # Если родитель не найден, просто сохраняем как комментарий верхнего уровня
+                comment.parent = None
+        # Если parent_id нет или родитель не найден, parent останется None (комментарий верхнего уровня)
+
+        if commit:
+            comment.save()
+        return comment
