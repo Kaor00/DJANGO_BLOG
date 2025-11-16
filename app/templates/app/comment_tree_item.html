@@ -3,13 +3,23 @@
 
 <div class="card mb-2" style="margin-inline-start: {{ level|mul:20 }}px;">
     <div class="card-body">
-        <h6 class="card-subtitle mb-1 text-muted">
-            {{ comment.author.username }} <small class="text-muted">{{ comment.created_at|date:"d M Y H:i" }}</small>
-        </h6>
-        <p class="card-text">{{ comment.content }}</p>
-        {% if user.is_authenticated %}
-        <button class="btn btn-sm btn-outline-secondary reply-btn" data-comment-id="{{ comment.id }}">Ответить</button>
-        {% endif %}
+        <!-- Аватар автора комментария -->
+        <div class="d-flex align-items-start mb-2">
+            {% if comment.author.profile.avatar %}
+                <img src="{{ comment.author.profile.avatar.url }}" alt="Аватар {{ comment.author.username }}" class="rounded-circle me-2" style="width: 30px; height: 30px;">
+            {% else %}
+                <img src="https://99px.ru/sstorage/1/2025/06/image_10506252105069244744.jpg" alt="Аватар по умолчанию" class="rounded-circle me-2" style="width: 30px; height: 30px;">
+            {% endif %}
+            <div class="flex-grow-1">
+                <h6 class="card-subtitle mb-1 text-muted">
+                    {{ comment.author.username }} <small class="text-muted">{{ comment.created_at|date:"d M Y H:i" }}</small>
+                </h6>
+                <p class="card-text">{{ comment.content }}</p>
+                {% if user.is_authenticated %}
+                <button class="btn btn-sm btn-outline-secondary reply-btn" data-comment-id="{{ comment.id }}">Ответить</button>
+                {% endif %}
+            </div>
+        </div>
     </div>
 </div>
 

@@ -210,7 +210,6 @@ def profile_view(request, username):
     user = get_object_or_404(User, username=username)
     # Получаем или создаём профиль
     profile, created = UserProfile.objects.get_or_create(user=user)
-    print(111, profile, created)
 
     # Передаём и пользователя, и профиль в шаблон
     return render(request, 'app/profile_view.html', {'profile_user': user, 'profile': profile})
