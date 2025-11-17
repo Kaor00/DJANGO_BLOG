@@ -22,6 +22,10 @@ class Post(models.Model):
         """Проверяет, поставил ли конкретный пользователь лайк."""
         return self.likes.filter(user=user).exists()
 
+    def get_comment_count(self):  # <-- Новый метод
+        """Возвращает количество комментариев для поста."""
+        return self.comments.count()
+
     class Meta:
         verbose_name = 'Post'
         verbose_name_plural = 'Posts'

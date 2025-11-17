@@ -38,9 +38,12 @@
                             <!-- Аватар автора -->
                             <div class="d-flex align-items-center mb-2">
                                 {% if post.author.profile.avatar %}
-                                    <img src="{{ post.author.profile.avatar.url }}" alt="Аватар {{ post.author.username }}" class="rounded-circle me-2" style="width: 30px; height: 30px;">
+                                <img src="{{ post.author.profile.avatar.url }}" alt="Аватар {{ post.author.username }}"
+                                     class="rounded-circle me-2" style="width: 30px; height: 30px;">
                                 {% else %}
-                                    <img src="https://99px.ru/sstorage/1/2025/06/image_10506252105069244744.jpg" alt="Аватар по умолчанию" class="rounded-circle me-2" style="width: 30px; height: 30px;">
+                                <img src="https://99px.ru/sstorage/1/2025/06/image_10506252105069244744.jpg"
+                                     alt="Аватар по умолчанию" class="rounded-circle me-2"
+                                     style="width: 30px; height: 30px;">
                                 {% endif %}
                                 <p class="post-meta mb-0"><strong>Автор:</strong> {{ post.author.username }}</p>
                             </div>
@@ -48,10 +51,13 @@
                             <!-- Отображение количества лайков в левом нижнем углу -->
                             <div class="position-absolute bottom-0 start-0 mb-2 ms-2">
                                 {% if post.get_like_count %}
-                                    <small class="text-muted">
-                                        <em>❤️</em>
-                                        {{ post.get_like_count }} <!-- Вызов метода модели -->
-                                    </small>
+                                <small class="text-muted">
+                                    <em>❤️</em>
+                                    {{ post.get_like_count }} <!-- Вызов метода модели -->
+                                    &nbsp;|&nbsp; <!-- Разделитель -->
+                                    <i class="fas fa-comments text-primary"></i> <!-- Иконка комментариев -->
+                                    {{ post.get_comment_count }} <!-- Количество комментариев -->
+                                </small>
                                 {%endif%}
                             </div>
                             <!-- /Отображение количества лайков -->
