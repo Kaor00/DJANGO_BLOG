@@ -230,3 +230,15 @@ def profile_edit(request):
         form = UserProfileForm(instance=profile, user=request.user)
 
     return render(request, 'app/profile_edit.html', {'form': form})
+
+
+@login_required
+def my_posts(request):
+    # Получаем только посты текущего пользователя
+    posts = Post.objects.filter(author=request.user).select_related('author__profile').prefetch_related('likes', 'comments')
+
+    # Передаем список posts в шаблон my_posts.html
+    context = {
+        'posts': posts,
+    }
+    return render(request, 'app/my_posts.html', context)

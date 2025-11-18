@@ -17,7 +17,15 @@
                     </a>
                 </li>
                 {% endif %}
-                <!-- /Добавляем кнопку "Добавить пост" -->
+
+                <!-- Добавляем кнопку "Мои посты" -->
+                {% if user.is_authenticated %}
+                <li class="nav-item">
+                    <a class="nav-link text-light" href="{% url 'my_posts' %}">
+                        Мои посты
+                    </a>
+                </li>
+                {% endif %}
             </ul>
         </div>
     </aside>
