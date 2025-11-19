@@ -252,7 +252,7 @@ def favorites(request):
     # related_name='favorite_posts' позволяет получить Favorite.objects.filter(user=request.user)
     # related_name='favorited_by' позволяет получить Post.objects.filter(favorited_by__user=request.user)
     # Но проще получить объекты Favorite и из них извлечь посты
-    favorite_entries = Favorite.objects.filter(user=request.user).select_related('post__author__profile')
+    favorite_entries = Favorite.objects.filter(user=request.user).select_related('post__author__profile').prefetch_related('post__likes', 'post__comments')
     posts = [entry.post for entry in favorite_entries] # Извлекаем посты
 
     context = {
