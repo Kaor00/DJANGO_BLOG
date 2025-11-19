@@ -1,0 +1,10 @@
+<!-- app/templates/app/favorites.html -->
+{% extends 'app/home.html' %}
+
+{% block title %}Избранное{% endblock %}
+
+{% block content %}
+    <h2 class="mb-4">Избранное</h2>
+    <!-- Остальной контент из home.html останется без изменений -->
+    {{ block.super }}
+{% endblock %}

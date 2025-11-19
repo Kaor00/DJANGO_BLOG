@@ -6,9 +6,8 @@ from django.http import HttpResponseRedirect
 from django.urls import reverse
 from django.contrib.auth.models import User
 from .forms import UserRegisterForm, UserLoginForm, PostForm, CommentForm, UserProfileForm
-from .models import Post, Like, Comment, CommentLike, UserProfile
+from .models import Post, Like, Comment, CommentLike, UserProfile, Favorite
 
-# Create your views here.
 def register(request):
     if request.method == 'POST':
         form = UserRegisterForm(request.POST)
@@ -62,6 +61,8 @@ def post_detail(request, post_id):
     if request.user.is_authenticated:
         user_liked = post.likes.filter(user=request.user).exists()  # Используем связь через related_name='likes'
 
+    user_favorited = post.favorited_by.filter(user=request.user).exists()  # Используем related_name='favorited_by'
+
     # Получаем все комментарии к посту, отсортированные по времени создания
     all_comments = Comment.objects.filter(post=post).select_related('author').prefetch_related(
         'comment_likes').order_by('created_at')
@@ -76,6 +77,7 @@ def post_detail(request, post_id):
         'user_liked': user_liked,  # Передаём флаг в шаблон
         'comment_form': comment_form,  # Передаём форму в шаблон
         'comment_tree': comment_tree,
+        'user_favorited': user_favorited,
     })
 
 @login_required
@@ -242,3 +244,45 @@ def my_posts(request):
         'posts': posts,
     }
     return render(request, 'app/my_posts.html', context)
+
+
+@login_required
+def favorites(request):
+    # Получаем посты, добавленные в избранное текущим пользователем
+    # related_name='favorite_posts' позволяет получить Favorite.objects.filter(user=request.user)
+    # related_name='favorited_by' позволяет получить Post.objects.filter(favorited_by__user=request.user)
+    # Но проще получить объекты Favorite и из них извлечь посты
+    favorite_entries = Favorite.objects.filter(user=request.user).select_related('post__author__profile')
+    posts = [entry.post for entry in favorite_entries] # Извлекаем посты
+
+    context = {
+        'posts': posts, # Передаём список постов
+    }
+    return render(request, 'app/favorites.html', context)
+
+@login_required
+def toggle_favorite(request, post_id):
+    post = get_object_or_404(Post, id=post_id)
+    # Проверяем, не является ли автор поста текущим пользователем
+    if post.author == request.user:
+        messages.error(request, 'Нельзя добавить в избранное свой собственный пост.')
+        # Редиректим обратно на страницу поста
+        next_url = request.META.get('HTTP_REFERER', reverse('home'))
+        return HttpResponseRedirect(next_url)
+
+    # Получаем или создаём объект Favorite
+    favorite_obj, created = Favorite.objects.get_or_create(user=request.user, post=post)
+
+    if created:
+        # Был добавлен в избранное
+        action = 'добавлен в'
+    else:
+        # Уже существовал, значит удаляем
+        favorite_obj.delete()
+        action = 'удалён из'
+
+    messages.info(request, f'Пост "{post.title}" {action} избранного.')
+
+    # Редиректим обратно на страницу поста
+    next_url = request.META.get('HTTP_REFERER', reverse('home'))
+    return HttpResponseRedirect(next_url)

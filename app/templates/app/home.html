@@ -26,6 +26,15 @@
                     </a>
                 </li>
                 {% endif %}
+
+                <!-- Добавляем кнопку "Избранное" -->
+                {% if user.is_authenticated %}
+                <li class="nav-item">
+                    <a class="nav-link text-light" href="{% url 'favorites' %}">
+                        Избранное
+                    </a>
+                </li>
+                {% endif %}
             </ul>
         </div>
     </aside>

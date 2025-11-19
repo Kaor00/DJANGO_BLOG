@@ -126,3 +126,20 @@ class UserProfile(models.Model):
     class Meta:
         verbose_name = 'UserProfile'
         verbose_name_plural = 'UserProfiles'
+
+
+# Модель для избранного
+class Favorite(models.Model):
+    user = models.ForeignKey(User, on_delete=models.CASCADE, related_name='favorite_posts')
+    post = models.ForeignKey(Post, on_delete=models.CASCADE, related_name='favorited_by')
+    created_at = models.DateTimeField(auto_now_add=True)
+
+    class Meta:
+        unique_together = ('user', 'post') # Один пользователь может добавить пост в избранное только один раз
+        verbose_name = 'Favorite'
+        verbose_name_plural = 'Favorites'
+        # Сортировка по умолчанию по дате добавления (новые первыми)
+        ordering = ['-created_at']
+
+    def __str__(self):
+        return f"{self.user.username} favorited {self.post.title}"
