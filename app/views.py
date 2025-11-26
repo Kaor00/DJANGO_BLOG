@@ -5,6 +5,7 @@ from django.contrib.auth.decorators import login_required
 from django.http import HttpResponseRedirect
 from django.urls import reverse
 from django.contrib.auth.models import User
+from django.db.models import Q
 from .forms import UserRegisterForm, UserLoginForm, PostForm, CommentForm, UserProfileForm, MessageForm
 from .models import Post, Like, Comment, CommentLike, UserProfile, Favorite, Message
 
@@ -233,7 +234,6 @@ def profile_edit(request):
 
     return render(request, 'app/profile_edit.html', {'form': form})
 
-
 @login_required
 def my_posts(request):
     # Получаем только посты текущего пользователя
@@ -244,7 +244,6 @@ def my_posts(request):
         'posts': posts,
     }
     return render(request, 'app/my_posts.html', context)
-
 
 @login_required
 def favorites(request):
@@ -288,25 +287,51 @@ def toggle_favorite(request, post_id):
     return HttpResponseRedirect(next_url)
 
 @login_required
-def messages_list(request):
-    # Получаем все сообщения, отправленные текущему пользователю
-    received_messages = Message.objects.filter(recipient=request.user).select_related('sender__profile').order_by('-timestamp')
-    # Подсчитываем непрочитанные
-    unread_count = received_messages.filter(is_read=False).count()
-    return render(request, 'app/messages_list.html', {
-        'messages': received_messages,
-        'unread_count': unread_count,
-    })
+def messages_list(request, recipient_id=None):
+    # Получаем список всех собеседников (людей, с которыми была переписка)
+    sent_by_me = Message.objects.filter(sender=request.user).values_list('recipient_id', flat=True)
+    sent_to_me = Message.objects.filter(recipient=request.user).values_list('sender_id', flat=True)
+    all_contact_ids = set(list(sent_by_me) + list(sent_to_me))
+    contacts = User.objects.filter(id__in=all_contact_ids).select_related('profile').distinct()
+    # Подсчитываем непрочитанные сообщения *для каждого контакта*
+    contacts_with_unread = []
+    for contact in contacts:
+        unread_count = Message.objects.filter(
+            sender=contact,      # Сообщение отправлено *от* этого контакта
+            recipient=request.user, # ... и адресовано *текущему пользователю*
+            is_read=False        # ... и *ещё не прочитано*
+        ).count()
+        contacts_with_unread.append({
+            'contact': contact,
+            'unread_count': unread_count
+        })
+    # Сортировка контактов по времени последнего сообщения
+    def get_last_message_time(contact):
+        last_msg = Message.objects.filter(
+            (Q(sender=request.user) & Q(recipient=contact)) |
+            (Q(sender=contact) & Q(recipient=request.user))
+        ).order_by('-timestamp').first()
+        return last_msg.timestamp if last_msg else None
+    sorted_contacts_with_unread = sorted(contacts_with_unread, key=lambda x: get_last_message_time(x['contact']), reverse=True)
+    selected_conversation = None
+    selected_recipient = None
+    if recipient_id:
+        selected_recipient = get_object_or_404(User, id=recipient_id)
+        if selected_recipient.id in all_contact_ids:
+            # Отмечаем сообщения от selected_recipient как прочитанные
+            Message.objects.filter(recipient=request.user, sender=selected_recipient, is_read=False).update(is_read=True)
+            selected_conversation = Message.objects.filter(
+                (Q(sender=request.user) & Q(recipient=selected_recipient)) |
+                (Q(sender=selected_recipient) & Q(recipient=request.user))
+            ).select_related('sender__profile').order_by('timestamp')
 
-@login_required
-def message_detail(request, message_id):
-    # Получаем конкретное сообщение
-    message = get_object_or_404(Message, id=message_id, recipient=request.user)
-    # Отмечаем как прочитанное, если оно не было прочитано
-    if not message.is_read:
-        message.is_read = True
-        message.save()
-    return render(request, 'app/message_detail.html', {'message': message})
+    unread_count_total = Message.objects.filter(recipient=request.user, is_read=False).count()
+    return render(request, 'app/messages_list.html', {
+        'contacts_with_unread': sorted_contacts_with_unread, # Передаём список словарей
+        'selected_conversation': selected_conversation,
+        'selected_recipient': selected_recipient,
+        'unread_count': unread_count_total,
+    })
 
 @login_required
 def send_message(request, recipient_id):
@@ -319,8 +344,10 @@ def send_message(request, recipient_id):
             message.recipient = recipient
             message.save()
             messages.success(request, f'Сообщение для {recipient.username} отправлено.')
-            # Редиректим на страницу получателя или на список сообщений
-            return redirect('profile_view', username=recipient.username) # или на 'messages_list'
+            # Редиректим на страницу с перепиской
+            return redirect('messages_list', recipient_id=recipient.id)
     else:
         form = MessageForm()
+    if request.method == 'GET':
+        return redirect('messages_list', recipient_id=recipient.id)
     return render(request, 'app/send_message.html', {'form': form, 'recipient': recipient})
