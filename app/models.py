@@ -174,7 +174,7 @@ class Product(models.Model):
     description = models.TextField()
     category = models.ForeignKey(Category, on_delete=models.CASCADE, related_name='products')
     price = models.DecimalField(max_digits=10, decimal_places=2)
-    image = models.ImageField(upload_to='product_images/', blank=True, null=True)
+    # image = models.ImageField(upload_to='product_images/', blank=True, null=True)
     created_at = models.DateTimeField(auto_now_add=True)
     updated_at = models.DateTimeField(auto_now=True)
 
@@ -207,3 +207,27 @@ class Order(models.Model):
     class Meta:
         verbose_name = 'Order'
         verbose_name_plural = 'Orders'
+
+# модель для изображений товара
+class ProductImage(models.Model):
+    product = models.ForeignKey(Product, on_delete=models.CASCADE, related_name='images') # Один товар — много изображений
+    image = models.ImageField(upload_to='product_images/', blank=True, null=True)
+    is_primary = models.BooleanField(default=False) # Флаг основного изображения (для миниатюрки)
+    order = models.PositiveIntegerField(default=0) # Порядок изображений
+
+    def __str__(self):
+        return f"Изображение {self.id} для {self.product.name}"
+
+    class Meta:
+        verbose_name = 'ProductImage'
+        verbose_name_plural = 'ProductImages'
+        ordering = ['order'] # Сортировка по порядку
+
+    def save(self, *args, **kwargs):
+        super().save(*args, **kwargs)
+        if self.image:
+            img = Image.open(self.image.path)
+            if img.height > 800 or img.width > 800:
+                output_size = (800, 800)
+                img.thumbnail(output_size)
+                img.save(self.image.path)

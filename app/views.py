@@ -358,7 +358,7 @@ def send_message(request, recipient_id):
     return render(request, 'app/send_message.html', {'form': form, 'recipient': recipient})
 
 def shop_home(request):
-    products = Product.objects.select_related('category').all()
+    products = Product.objects.select_related('category').prefetch_related('images').all()
     categories = Category.objects.all()
     return render(request, 'app/shop/home.html', {
         'products': products,
@@ -367,7 +367,7 @@ def shop_home(request):
 
 def shop_category(request, category_id):
     category = get_object_or_404(Category, id=category_id)
-    products = Product.objects.filter(category=category).select_related('category')
+    products = Product.objects.filter(category=category).select_related('category').prefetch_related('images')
     categories = Category.objects.all()
     return render(request, 'app/shop/category.html', {
         'products': products,
@@ -376,9 +376,17 @@ def shop_category(request, category_id):
     })
 
 def shop_product_detail(request, product_id):
+    """Детали конкретного товара."""
     product = get_object_or_404(Product, id=product_id)
+    # Получаем все изображения товара
+    images = product.images.all()
+    # Если есть основное изображение, используем его как главное, иначе первое
+    primary_image = images.filter(is_primary=True).first() or images.first()
+
     return render(request, 'app/shop/product_detail.html', {
         'product': product,
+        'images': images,
+        'primary_image': primary_image,
     })
 
 def shop_checkout(request, product_id):

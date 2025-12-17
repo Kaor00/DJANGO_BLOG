@@ -1,25 +1,48 @@
 {% extends 'app/shop/base.html' %}
-
 {% block shop_content %}
 <div class="row">
     <div class="col-md-6">
-        {% if product.image %}
-            <img src="{{ product.image.url }}" class="img-fluid rounded" alt="{{ product.name }}">
-        {% else %}
-            <img src="" class="img-fluid rounded" alt="Нет изображения">
-        {% endif %}
+        <!-- Галерея изображений -->
+        <div id="productCarousel" class="carousel slide" data-bs-ride="carousel">
+            <!-- Индикаторы -->
+            <div class="carousel-indicators">
+                {% for image in images %}
+                    <button
+                            type="button"
+                            data-bs-target="#productCarousel"
+                            data-bs-slide-to="{{ forloop.counter0 }}" {% if forloop.first %}class="active"{% endif %}
+                            aria-current="true" aria-label="Slide {{ forloop.counter }}">
+                    </button>
+                {% endfor %}
+            </div>
+            <!-- Слайды -->
+            <div class="carousel-inner">
+                {% for image in images %}
+                    <div class="carousel-item {% if forloop.first %}active{% endif %}">
+                        <img src="{{ image.image.url }}" class="d-block w-100" alt="{{ product.name }} - Изображение {{ forloop.counter }}">
+                    </div>
+                {% endfor %}
+            </div>
+            <!-- Кнопки навигации -->
+            <button class="carousel-control-prev" type="button" data-bs-target="#productCarousel" data-bs-slide="prev">
+                <span class="carousel-control-prev-icon" aria-hidden="true"></span>
+                <span class="visually-hidden">Предыдущее</span>
+            </button>
+            <button class="carousel-control-next" type="button" data-bs-target="#productCarousel" data-bs-slide="next">
+                <span class="carousel-control-next-icon" aria-hidden="true"></span>
+                <span class="visually-hidden">Следующее</span>
+            </button>
+        </div>
     </div>
     <div class="col-md-6">
         <h1>{{ product.name }}</h1>
-        <p class="lead"><strong>{{product.price}} руб.</strong></p>
-        <p class="text-muted">
-            Категория: <a href="{% url 'shop_category' product.category.id %}">{{ product.category.name }}</a>
-        </p>
+        <p class="lead"><strong>{{ product.price }} руб.</strong></p>
+        <p class="text-muted">Категория: <a href="{% url 'shop_category' product.category.id %}">{{ product.category.name }}</a></p>
         <hr>
         <p>{{ product.description }}</p>
         <hr>
         <!-- Форма для добавления в корзину или оформления заказа -->
-        <form method="post" action="{% url 'shop_checkout' product.id %}">
+        <form method="post" action="#"> <!-- Пока заглушка -->
             {% csrf_token %}
             <div class="mb-3">
                 <label for="quantity" class="form-label">Количество:</label>
