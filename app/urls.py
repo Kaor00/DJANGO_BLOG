@@ -20,4 +20,11 @@ urlpatterns = [
     path('messages/send/<int:recipient_id>/', views.send_message, name='send_message'),
     path('profile/', views.profile_edit, name='profile_edit'),
     path('profile/<str:username>/', views.profile_view, name='profile_view'),
+    # магазин
+    path('shop/', views.shop_home, name='shop_home'),
+    path('shop/category/<int:category_id>/', views.shop_category, name='shop_category'),
+    path('shop/product/<int:product_id>/', views.shop_product_detail, name='shop_product_detail'),
+    # for yooukassa
+    path('shop/product/<int:product_id>/checkout/', views.shop_checkout, name='shop_checkout'),
+    path('shop/success/', views.shop_success, name='shop_success'),
 ]
