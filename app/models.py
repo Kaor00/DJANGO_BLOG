@@ -51,7 +51,6 @@ class Post(models.Model):
         # Сохраняем объект
         super().save(*args, **kwargs)
 
-
 # Модель для лайков
 class Like(models.Model):
     user = models.ForeignKey(User, on_delete=models.CASCADE, related_name='post_likes')
@@ -65,7 +64,6 @@ class Like(models.Model):
 
     def __str__(self):
         return f"{self.user.username} liked {self.post.title}"
-
 
 # Модель для комментариев
 class Comment(models.Model):
@@ -85,7 +83,6 @@ class Comment(models.Model):
         verbose_name = 'Comment'
         verbose_name_plural = 'Comments'
 
-
 # Модель для лайков к комментариям (пока не реализовано)
 class CommentLike(models.Model):
     user = models.ForeignKey(User, on_delete=models.CASCADE, related_name='comment_likes')
@@ -99,7 +96,6 @@ class CommentLike(models.Model):
 
     def __str__(self):
         return f"{self.user.username} liked comment on {self.comment.post.title}"
-
 
 # Новая модель для профиля пользователя
 class UserProfile(models.Model):
@@ -127,7 +123,6 @@ class UserProfile(models.Model):
         verbose_name = 'UserProfile'
         verbose_name_plural = 'UserProfiles'
 
-
 # Модель для избранного
 class Favorite(models.Model):
     user = models.ForeignKey(User, on_delete=models.CASCADE, related_name='favorite_posts')
@@ -143,7 +138,6 @@ class Favorite(models.Model):
 
     def __str__(self):
         return f"{self.user.username} favorited {self.post.title}"
-
 
 # модель для личных сообщений
 class Message(models.Model):
@@ -161,3 +155,55 @@ class Message(models.Model):
         verbose_name = 'Message'
         verbose_name_plural = 'Messages'
         ordering = ['-timestamp']
+
+# модель для категории
+class Category(models.Model):
+    name = models.CharField(max_length=100, unique=True)
+    description = models.TextField(blank=True)
+
+    def __str__(self):
+        return self.name
+
+    class Meta:
+        verbose_name = 'Category'
+        verbose_name_plural = 'Categories'
+
+# модель для товара
+class Product(models.Model):
+    name = models.CharField(max_length=200)
+    description = models.TextField()
+    category = models.ForeignKey(Category, on_delete=models.CASCADE, related_name='products')
+    price = models.DecimalField(max_digits=10, decimal_places=2)
+    image = models.ImageField(upload_to='product_images/', blank=True, null=True)
+    created_at = models.DateTimeField(auto_now_add=True)
+    updated_at = models.DateTimeField(auto_now=True)
+
+    def __str__(self):
+        return self.name
+
+    class Meta:
+        verbose_name = 'Product'
+        verbose_name_plural = 'Products'
+
+# Оплата
+class Order(models.Model):
+    STATUS_CHOICES = [
+        ('pending', 'Ожидает оплаты'),
+        ('paid', 'Оплачено'),
+        ('cancelled', 'Отменено'),
+    ]
+
+    user = models.ForeignKey(User, on_delete=models.CASCADE, related_name='orders')
+    product = models.ForeignKey(Product, on_delete=models.CASCADE)
+    quantity = models.PositiveIntegerField(default=1)
+    total_price = models.DecimalField(max_digits=10, decimal_places=2)
+    status = models.CharField(max_length=20, choices=STATUS_CHOICES, default='pending')
+    created_at = models.DateTimeField(auto_now_add=True)
+    yookassa_payment_id = models.CharField(max_length=100, blank=True, null=True)
+
+    def __str__(self):
+        return f'Заказ #{self.id} от {self.user.username}'
+
+    class Meta:
+        verbose_name = 'Order'
+        verbose_name_plural = 'Orders'

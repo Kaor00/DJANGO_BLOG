@@ -1,0 +1,42 @@
+{% extends 'app/shop/base.html' %}
+
+{% block shop_content %}
+<h2>{{ category.name }}</h2>
+
+<!-- Навигация по категориям -->
+<div class="row mb-4">
+    <div class="col">
+        <h5>Все категории:</h5>
+        <ul class="list-unstyled">
+            {% for cat in categories %}
+                <li><a href="{% url 'shop_category' cat.id %}">{{ cat.name }}</a></li>
+            {% endfor %}
+        </ul>
+    </div>
+</div>
+
+<!-- Список товаров в категории -->
+<div class="row">
+    {% for product in products %}
+    <div class="col-md-4 mb-4">
+        <div class="card h-100">
+            {% if product.image %}
+                <img src="{{ product.image.url }}" class="card-img-top" alt="{{ product.name }}">
+            {% else %}
+                <img src="" class="card-img-top" alt="Нет изображения">
+            {% endif %}
+            <div class="card-body d-flex flex-column">
+                <h5 class="card-title">{{ product.name }}</h5>
+                <p class="card-text">{{ product.description|truncatechars:100 }}</p>
+                <p class="card-text mt-auto"><strong>{{product.price}} руб.</strong></p>
+                <a href="{% url 'shop_product_detail' product.id %}" class="btn btn-primary mt-auto">Подробнее</a>
+            </div>
+        </div>
+    </div>
+    {% empty %}
+    <div class="col">
+        <p class="text-muted">В этой категории товаров пока нет.</p>
+    </div>
+    {% endfor %}
+</div>
+{% endblock %}
